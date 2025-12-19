@@ -1,6 +1,6 @@
 """Pydantic models for Qdrant payloads, filters, and results."""
 
-from typing import Optional, List, Any, Dict
+from typing import Optional, List, Any, Dict, Literal
 from pydantic import BaseModel, Field, ConfigDict
 
 
@@ -43,6 +43,10 @@ class QdrantFilter(BaseModel):
     calendar_quarter: Optional[int] = Field(None, description="Calendar quarter (1-4)")
     date_from: Optional[str] = Field(None, description="Start date (YYYY-MM-DD)")
     date_to: Optional[str] = Field(None, description="End date (YYYY-MM-DD)")
+    parent_id_filter: Optional[Literal["null", "not_null"]] = Field(
+        None,
+        description="Filter by parent_id: 'null' for main docs only (e.g., 8-K filings), 'not_null' for exhibits only (e.g., press releases)"
+    )
 
 
 class SearchResult(BaseModel):

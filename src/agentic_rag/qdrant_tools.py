@@ -13,6 +13,8 @@ from qdrant_client.models import (
     PointStruct,
     RecommendQuery,
     RecommendInput,
+    IsNullCondition,
+    PayloadField,
 )
 
 from .config import get_settings, Settings
@@ -112,10 +114,30 @@ def build_qdrant_filter(filter_params: QdrantFilter | None) -> Optional[Filter]:
             range=Range(**range_params)
         ))
 
-    if not conditions:
+    # Parent ID filter (for 8-K main docs vs exhibits)
+    # "null" = main docs only, "not_null" = exhibits only (e.g., press releases)
+    # Note: IsNullCondition is a separate condition type, not part of FieldCondition
+    # We'll handle this by returning a filter with must/must_not as appropriate
+    # For now, we add to a separate list and handle below
+    must_not_conditions = []
+    if filter_params.parent_id_filter == "null":
+        # parent_id IS NULL - use IsNullCondition in must
+        conditions.append(IsNullCondition(
+            is_null=PayloadField(key="parent_id")
+        ))
+    elif filter_params.parent_id_filter == "not_null":
+        # parent_id IS NOT NULL - use IsNullCondition in must_not
+        must_not_conditions.append(IsNullCondition(
+            is_null=PayloadField(key="parent_id")
+        ))
+
+    if not conditions and not must_not_conditions:
         return None
 
-    return Filter(must=conditions)
+    return Filter(
+        must=conditions if conditions else None,
+        must_not=must_not_conditions if must_not_conditions else None,
+    )
 
 
 def _scored_point_to_result(point: ScoredPoint) -> SearchResult:
