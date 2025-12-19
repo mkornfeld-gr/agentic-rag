@@ -1,0 +1,11 @@
+services:
+  agentic-rag:
+    build: .
+    container_name: agentic-rag
+    ports:
+      - "8001:8001"
+    environment:
+      # Prefect settings (for secret blocks)
+      - PREFECT_API_URL=${PREFECT_API_URL:-http://10.10.150.104:4200/api}
+
+    restart: unless-stopped
